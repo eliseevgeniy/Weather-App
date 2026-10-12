@@ -1,46 +1,153 @@
-# Getting Started with Create React App
+# Weather App — приложение для отображения погоды
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+SPA на React + TypeScript для просмотра текущей погоды и прогноза на 7 дней
+в избранных городах. Данные берутся из открытого API [Open-Meteo](https://open-meteo.com/).
 
-## Available Scripts
+## Стек
 
-In the project directory, you can run:
+- **React 18** + **TypeScript**
+- **React Bootstrap** (Card, Table, Container, Row, Col, Button, Spinner, Form, ListGroup)
+- **SCSS** (препроцессор `sass`)
+- **React Router DOM v6** — маршрутизация между страницами
+- **Create React App** — сборка проекта
+- **Open-Meteo API** — геокодинг и данные о погоде
 
-### `npm start`
+## Установка и запуск
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+```bash
+# 1. Установить зависимости
+npm install
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+# 2. Запустить dev-сервер
+npm start
+```
 
-### `npm test`
+Приложение откроется автоматически по адресу [http://localhost:3000](http://localhost:3000).
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+### Сборка production-версии
 
-### `npm run build`
+```bash
+npm run build
+```
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+Готовые файлы появятся в папке `build/`.
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+## ⚠️ Важно
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+API `open-meteo.com` **недоступен на территории РФ без VPN**. Если карточки
+показывают «Нет данных» — включите VPN и обновите страницу.
 
-### `npm run eject`
+## Функциональность
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+### Главная страница (`/`)
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+- Заголовок «Погода в избранных городах».
+- Компонент **AutocompleteInput** — автодополнение названий городов
+  по мере ввода (debounce 300 мс, запрос к geocoding API).
+- **6 карточек** с текущей погодой для городов:
+  Moscow, St Petersburg, Rostov-on-Don, Vladivostok, Krasnodar, Yekaterinburg.
+- Адаптивная сетка Bootstrap Grid:
+  - **3 карточки в ряд** — на широких экранах (`lg`)
+  - **2 карточки в ряд** — на средних (`md`)
+  - **1 карточка в ряд** — на мобильных (`xs`)
+- Каждая карточка делает **2 запроса**:
+  1. `https://geocoding-api.open-meteo.com/v1/search?name=<city>` — координаты города
+  2. `https://api.open-meteo.com/v1/forecast?latitude=<lat>&longitude=<lng>&current_weather=true&windspeed_unit=ms` — текущая погода
+- На карточке отображается:
+  - название города,
+  - текущая температура (°C),
+  - состояние погоды (расшифровка WMO weather code на русский),
+  - скорость ветра (м/с),
+  - кнопка **«Смотреть прогноз»**, ведущая на страницу прогноза.
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+### Страница прогноза (`/weather/:city?lat=...&lng=...`)
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+- Ссылка **«Назад»** на главную страницу.
+- Заголовок «Прогноз погоды в городе \<City\>».
+- Таблица с прогнозом на **7 дней**:
+  - Дата в формате `15/06`
+  - Минимальная температура
+  - Максимальная температура
+  - Погода (расшифровка weather code)
+- Данные получаются одним запросом:
+  `https://api.open-meteo.com/v1/forecast?latitude=<lat>&longitude=<lng>&daily=weathercode,temperature_2m_max,temperature_2m_min&timezone=GMT`
 
-## Learn More
+### AutocompleteInput (повышенная сложность)
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+- Использует `<Form.Control>` и `<ListGroup>` из React Bootstrap.
+- При вводе ≥ 2 символов отправляет запрос к
+  `https://geocoding-api.open-meteo.com/v1/search?name=<query>`.
+- Отображает список вариантов в формате «Город, Страна».
+- При клике по варианту:
+  - поле заполняется полным названием города,
+  - список скрывается,
+  - происходит переадресация на `/weather/<city>?lat=...&lng=...`.
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+## Структура проекта
+
+```
+weather-app/
+├── public/
+│   └── index.html
+├── src/
+│   ├── components/
+│   │   ├── AutocompleteInput.tsx   # автодополнение с выпадающим списком
+│   │   ├── CityCard.tsx            # карточка города с текущей погодой
+│   │   ├── Header.tsx              # переиспользуемый заголовок
+│   │   └── Loader.tsx              # прелоадер (Spinner)
+│   ├── hooks/
+│   │   ├── useCurrentWeather.ts    # геокодинг + текущая погода
+│   │   └── useForecast.ts          # прогноз на 7 дней
+│   ├── pages/
+│   │   ├── HomePage.tsx            # главная страница
+│   │   └── WeatherPage.tsx         # страница прогноза
+│   ├── types/
+│   │   └── weather.ts              # TypeScript-интерфейсы API
+│   ├── utils/
+│   │   ├── formatDate.ts           # форматирование даты (15/06)
+│   │   └── weatherCode.ts          # словарь WMO weather code → русский
+│   ├── styles/
+│   │   └── main.scss               # глобальные стили
+│   ├── styles.d.ts                 # декларации для *.css / *.scss
+│   ├── react-app-env.d.ts          # типы react-scripts
+│   ├── App.tsx                     # роутинг
+│   └── index.tsx                   # точка входа
+├── package.json
+├── tsconfig.json
+└── README.md
+```
+
+## Реализованные требования
+
+| № | Требование | Статус |
+|---|------------|--------|
+| 1 | CRA + TypeScript + React Bootstrap + SCSS | ✅ |
+| 2 | Главная страница с 6 карточками и 2 API-запросами | ✅ |
+| 3 | Страница прогноза с таблицей на 7 дней | ✅ |
+| 4 | Переиспользуемые компоненты и хуки | ✅ |
+| 5 | Полная типизация (`types/weather.ts`) | ✅ |
+| 6 | Нет ошибок в рантайме (AbortController, обработка ошибок) | ✅ |
+| 7 | AutocompleteInput с `Form.Control` + `ListGroup` | ✅ |
+
+## Используемые API
+
+- [Open-Meteo Geocoding API](https://open-meteo.com/en/docs/geocoding-api) — поиск координат по названию города.
+- [Open-Meteo Forecast API](https://open-meteo.com/en/docs) — текущая погода и прогноз на 7 дней.
+- [WMO Weather interpretation codes](https://open-meteo.com/en/docs) — расшифровка кодов погоды.
+
+## Скрипты npm
+
+| Команда | Описание |
+|---------|----------|
+| `npm start` | Запуск dev-сервера на `localhost:3000` |
+| `npm run build` | Production-сборка в папку `build/` |
+| `npm test` | Запуск тестов (Jest + React Testing Library) |
+| `npm run eject` | Извлечение конфигурации CRA (необратимо) |
+
+## Автор
+
+*Елисеев Е.Ю. Университет "Синергия"*
+
+## Лицензия
+
+Учебный проект. Свободное использование в образовательных целях.
