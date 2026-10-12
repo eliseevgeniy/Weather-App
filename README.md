@@ -5,10 +5,10 @@ SPA на React + TypeScript для просмотра текущей погод�
 
 ## Стек
 
-- **React 18** + **TypeScript**
+- **React 19** + **TypeScript**
 - **React Bootstrap** (Card, Table, Container, Row, Col, Button, Spinner, Form, ListGroup)
 - **SCSS** (препроцессор `sass`)
-- **React Router DOM v6** — маршрутизация между страницами
+- **React Router DOM v7** — маршрутизация между страницами
 - **Create React App** — сборка проекта
 - **Open-Meteo API** — геокодинг и данные о погоде
 
